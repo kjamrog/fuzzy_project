@@ -1,7 +1,7 @@
 import numpy as np
 import skfuzzy as fuzz
 
-price_limit = 1200
+price_limit = 1200 #given as argument
 
 #CPU
 cpu_range = np.arange(1.5, 4.2, 0.1)
@@ -32,12 +32,13 @@ out_slaby = fuzz.trapmf(out_range, [-1, -0.5, 0.25, 0.5])
 out_sredni = fuzz.trimf(out_range, [0.25, 0.5, 0.75])
 out_mocny = fuzz.trapmf(out_range, [0.5, 0.75, 1.25, 1.5])
 
-#fuzzification
+#FUZZIFICATION
+#get specific laptop data
 cpu = 0
 ram = 0
 drive = 0
 price = 0
-output = [0 for el in range(13)]
+output_cut_levels = [[] for el in range(13)]
 
 cpu_bslaby_level = ('bslaby', fuzz.interp_membership(cpu_range, cpu_bslaby, cpu))
 cpu_slaby_level = ('slaby', fuzz.interp_membership(cpu_range, cpu_slaby, cpu))
@@ -68,35 +69,73 @@ price = 'akceptowalna' if price_level != 0 else 'nieakceptowalna'
 Tego wyliczania z MIN nie jestem pewien jeszcze
 '''
 #RULES
+active_rules = []
 if price != 'akceptowalna':
-    output[0] == ('slaby', price_level)
+    output_cut_levels[0] = ('slaby', price_level[1])
+    active_rules.append(0)
 if cpu == 'mocny' and ram != 'slaby' and drive != 'slaby' and price == 'akceptowalna':
-    output[1] == ('mocny', min([cpu_mocny_level, ram_sredni_level, ram_mocny_level, driv_sredni_level, driv_mocny_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[1] = ('mocny', (min([cpu_mocny_level, ram_sredni_level, ram_mocny_level, driv_sredni_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(1)
 if cpu == 'sredni' and ram == 'mocny' and drive == 'mocny' and price == 'akceptowalna':
-    output[2] == ('mocny', min([cpu_sredni_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[2] = ('mocny', (min([cpu_sredni_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(2)
 if cpu == 'sredni' and ram == 'slaby' and drive == 'slaby' and price == 'akceptowalna':
-    output[3] == ('slaby', min([cpu_sredni_level, ram_slaby_level, driv_slaby_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[3] = ('slaby', (min([cpu_sredni_level, ram_slaby_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(3)
 if cpu == 'sredni' and ram == 'sredni' and price == 'akceptowalna':
-    output[4] == ('sredni', min([cpu_sredni_level, ram_sredni_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[4] = ('sredni', (min([cpu_sredni_level, ram_sredni_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(4)
 if cpu == 'sredni' and drive == 'sredni' and price == 'akceptowalna':
-    output[5] == ('sredni', min([cpu_sredni_level, driv_sredni_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[5] = ('sredni', (min([cpu_sredni_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(5)
 if cpu == 'slaby' and ram != 'mocny' and drive != 'mocny' and price == 'akceptowalna':
-    output[6] == ('slaby', min([cpu_slaby_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[6] = ('slaby', (min([cpu_slaby_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(6)
 if cpu == 'slaby' and ram == 'mocny' and drive == 'mocny' and price == 'akceptowalna':
-    output[7] == ('sredni', min([cpu_slaby_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[7] = ('sredni', (min([cpu_slaby_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(7)
 if cpu == 'bslaby' and price == 'akceptowalna':
-    output[8] == ('slaby', min([cpu_bslaby_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[8] = ('slaby', (min([cpu_bslaby_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(8)
 if cpu == 'mocny' and ram == 'slaby' and price == 'akceptowalna':
-    output[9] == ('sredni', min([cpu_mocny_level, ram_slaby_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[9] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(9)
 if cpu == 'mocny' and ram != 'mocny' and drive == 'slaby' and price == 'akceptowalna':
-    output[10] == ('sredni', min([cpu_mocny_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[10] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(10)
 if cpu == 'mocny' and ram == 'mocny' and drive == 'slaby' and price == 'akceptowalna':
-    output[11] == ('mocny', min([cpu_mocny_level, ram_mocny_level, driv_slaby_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[11] = ('mocny', (min([cpu_mocny_level, ram_mocny_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(11)
 if cpu == 'sredni' and ram != 'mocny' and drive != 'mocny' and price == 'akceptowalna':
-    output[12] == ('sredni', min([cpu_sredni_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))
+    output_cut_levels[12] = ('sredni', (min([cpu_sredni_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    active_rules.append(12)
+
+#Hamacher T-norm (product)
+#( ab ) / ( a + b - ab )
+#Hamacher T-conorm (sum)
+#(a + b - 2ab) / (1 - ab)
+
+#CUT_OUTPUTS
+output_cuts = [[] for o in range(len(active_rules))]
+for cut in range(len(active_rules)):
+    (out_var, level) = output_cut_levels[active_rules[cut]]
+    output_cuts[cut] = [el if el < level else level for el in globals()['out_' + out_var]]
 
 
+#AGGREGATE_OUTPUTS
+out_aggregated = []
+if len(output_cuts) <= 0:
+    raise Exception
+elif len(output_cuts) == 1:
+    out_aggregated = output_cuts[0]
+else:
+    for n in range(len(output_cuts)-1):
+        out_aggregated = np.fmax(np.fmax(output_cuts[n], output_cuts[n+1]), out_aggregated)
 
+print(out_aggregated)
+#DEFUZZIFY
+result_defuzz = fuzz.defuzzify.centroid(out_range, out_aggregated)
+print(result_defuzz)
 #0 0 0 -1 1
 #4 -1 -1 1 3
 #3 3 3 1 3
