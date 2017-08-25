@@ -1,7 +1,22 @@
 import numpy as np
 import skfuzzy as fuzz
 
-price_limit = 1200 #given as argument
+def inference_norm(norm, variables):
+    cut_level = 1
+    for i in range(len(variables)):
+        cut_level = norm(cut_level, variables[i])
+    return cut_level
+
+#Hamacher T-norm (product)
+#( ab ) / ( a + b - ab )
+#Hamacher T-conorm (sum)
+#(a + b - 2ab) / (1 - ab)
+def hamacher_norm(a, b):
+    if a == 0 or b == 0:
+        return 0
+    return (a * b) / (a + b - a * b)
+
+max_price = 1200 #given as argument
 
 #CPU
 cpu_range = np.arange(1.5, 4.2, 0.1)
@@ -24,7 +39,7 @@ driv_mocny = fuzz.trapmf(driv_range, [2000, 3000, 6386, 8272])
 
 #PRICE
 price_range = np.arange(0, 3000, 1)
-price_acceptable = fuzz.trapmf(price_range, [-700, -80, price_limit, 1.15*price_limit])
+price_acceptable = fuzz.trapmf(price_range, [-700, -80, max_price, 1.15*max_price])
 
 #OUTPUT
 out_range = np.arange(0, 1, 0.05)
@@ -34,6 +49,12 @@ out_mocny = fuzz.trapmf(out_range, [0.5, 0.75, 1.25, 1.5])
 
 #FUZZIFICATION
 #get specific laptop data
+'''
+cpu = self.cpu_rate
+ram = self.ram_rate
+drive = self.drive_rate
+price 
+'''
 cpu = 0
 ram = 0
 drive = 0
@@ -65,55 +86,61 @@ ram = ram_level[0]
 drive = drive_level[0]
 price = 'akceptowalna' if price_level != 0 else 'nieakceptowalna'
 
-'''
-Tego wyliczania z MIN nie jestem pewien jeszcze
-'''
+
 #RULES
 active_rules = []
 if price != 'akceptowalna':
     output_cut_levels[0] = ('slaby', price_level[1])
     active_rules.append(0)
 if cpu == 'mocny' and ram != 'slaby' and drive != 'slaby' and price == 'akceptowalna':
-    output_cut_levels[1] = ('mocny', (min([cpu_mocny_level, ram_sredni_level, ram_mocny_level, driv_sredni_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[1] = ('mocny', (min([cpu_mocny_level, ram_sredni_level, ram_mocny_level, driv_sredni_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[1] = ('mocny', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in[cpu_mocny_level, ram_sredni_level, ram_mocny_level, driv_sredni_level, driv_mocny_level]])))
     active_rules.append(1)
 if cpu == 'sredni' and ram == 'mocny' and drive == 'mocny' and price == 'akceptowalna':
-    output_cut_levels[2] = ('mocny', (min([cpu_sredni_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[2] = ('mocny', (min([cpu_sredni_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[2] = ('mocny', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_sredni_level, ram_mocny_level, driv_mocny_level]])))
     active_rules.append(2)
 if cpu == 'sredni' and ram == 'slaby' and drive == 'slaby' and price == 'akceptowalna':
-    output_cut_levels[3] = ('slaby', (min([cpu_sredni_level, ram_slaby_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[3] = ('slaby', (min([cpu_sredni_level, ram_slaby_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[3] = ('slaby', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_sredni_level, ram_slaby_level, driv_slaby_level]])))
     active_rules.append(3)
 if cpu == 'sredni' and ram == 'sredni' and price == 'akceptowalna':
-    output_cut_levels[4] = ('sredni', (min([cpu_sredni_level, ram_sredni_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[4] = ('sredni', (min([cpu_sredni_level, ram_sredni_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[4] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_sredni_level, ram_sredni_level]])))
     active_rules.append(4)
 if cpu == 'sredni' and drive == 'sredni' and price == 'akceptowalna':
-    output_cut_levels[5] = ('sredni', (min([cpu_sredni_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[5] = ('sredni', (min([cpu_sredni_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[5] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_sredni_level, driv_sredni_level]])))
     active_rules.append(5)
 if cpu == 'slaby' and ram != 'mocny' and drive != 'mocny' and price == 'akceptowalna':
-    output_cut_levels[6] = ('slaby', (min([cpu_slaby_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[6] = ('slaby', (min([cpu_slaby_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[6] = ('slaby', min(price_level[1], inference_norm((hamacher_norm, [x[1] for x in [cpu_slaby_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level]]))))
     active_rules.append(6)
 if cpu == 'slaby' and ram == 'mocny' and drive == 'mocny' and price == 'akceptowalna':
-    output_cut_levels[7] = ('sredni', (min([cpu_slaby_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[7] = ('sredni', (min([cpu_slaby_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[7] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_slaby_level, ram_mocny_level, driv_mocny_level]])))
     active_rules.append(7)
 if cpu == 'bslaby' and price == 'akceptowalna':
-    output_cut_levels[8] = ('slaby', (min([cpu_bslaby_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[8] = ('slaby', (min([cpu_bslaby_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[8] = ('slaby', (min(filter(lambda x: x[1], [cpu_bslaby_level, price_level])))[1])
     active_rules.append(8)
 if cpu == 'mocny' and ram == 'slaby' and price == 'akceptowalna':
-    output_cut_levels[9] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[9] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[9] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_mocny_level, ram_slaby_level]])))
     active_rules.append(9)
 if cpu == 'mocny' and ram != 'mocny' and drive == 'slaby' and price == 'akceptowalna':
-    output_cut_levels[10] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[10] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[10] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_mocny_level, ram_slaby_level, ram_sredni_level, driv_slaby_level]])))
     active_rules.append(10)
 if cpu == 'mocny' and ram == 'mocny' and drive == 'slaby' and price == 'akceptowalna':
-    output_cut_levels[11] = ('mocny', (min([cpu_mocny_level, ram_mocny_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[11] = ('mocny', (min([cpu_mocny_level, ram_mocny_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[11] = ('mocny', min(price_level[1], inference_norm((hamacher_norm, [x[1] for x in [cpu_mocny_level, ram_mocny_level, driv_slaby_level]]))))
     active_rules.append(11)
 if cpu == 'sredni' and ram != 'mocny' and drive != 'mocny' and price == 'akceptowalna':
-    output_cut_levels[12] = ('sredni', (min([cpu_sredni_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    #output_cut_levels[12] = ('sredni', (min([cpu_sredni_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
+    output_cut_levels[12] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in [cpu_sredni_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level]])))
     active_rules.append(12)
 
-#Hamacher T-norm (product)
-#( ab ) / ( a + b - ab )
-#Hamacher T-conorm (sum)
-#(a + b - 2ab) / (1 - ab)
 
 #CUT_OUTPUTS
 output_cuts = [[] for o in range(len(active_rules))]
@@ -132,10 +159,12 @@ else:
     for n in range(len(output_cuts)-1):
         out_aggregated = np.fmax(np.fmax(output_cuts[n], output_cuts[n+1]), out_aggregated)
 
-print(out_aggregated)
+
 #DEFUZZIFY
 result_defuzz = fuzz.defuzzify.centroid(out_range, out_aggregated)
+result_defuzz2 = sum(x*y for (x, y) in zip(out_range, out_aggregated)) / sum(out_aggregated) #Wynik nieco różny od defuzzify.centroid
 print(result_defuzz)
+print(result_defuzz2)
 #0 0 0 -1 1
 #4 -1 -1 1 3
 #3 3 3 1 3
