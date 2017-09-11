@@ -1,6 +1,3 @@
-#This directory includes data which is user by application. It should be stored only localy
-data/*
-
 #editor
 .idea
 .idea/*
