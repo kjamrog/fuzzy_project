@@ -1,5 +1,6 @@
 from openpyxl import load_workbook
 import os
+import src.MFs as mfs
 
 
 class Computer:
@@ -18,11 +19,7 @@ class Computer:
         self.calculated_rate = 0
 
     def calc_rate(self, max_price):
-        calculated_rate = 0
-        '''
-        Calculations
-        '''
-        self.calculated_rate = calculated_rate
+        self.calculated_rate = mfs.calculate(max_price, self)
 
 
 class ComputersList:
@@ -50,7 +47,7 @@ class ComputersList:
             c.calc_rate(max_price)
 
     def get_sorted(self):
-        return sorted(self.computers, key=lambda x: float(x.cpu_rate), reverse=True)
+        return sorted(self.computers, key=lambda x: float(x.calculated_rate), reverse=True)
 
     def get_best(self, max_price, amount):
         self.__calculate_ratings(max_price)
