@@ -5,4 +5,4 @@ computers = ComputersList()
 best = computers.get_best(1000, 10)
 
 for i in best:
-    print(i.name + '    ' + str(i.calculated_rate))
+    print("{}   {}  {}".format(i.name, i.price, i.calculated_rate))

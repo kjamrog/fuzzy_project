@@ -15,11 +15,11 @@ def inference_norm(norm, variables):
 # (a + b - 2ab) / (1 - ab)
 def hamacher_norm(a, b):
     if a == 0 or b == 0:
-        return 0.1
+        return 0
     return (a * b) / (a + b - a * b)
 
 
-def calculate(max_price, computer):
+def calculate(max_price, computer, norm=hamacher_norm):
     # max_price = 1200 #given as argument
 
     # CPU
@@ -30,7 +30,7 @@ def calculate(max_price, computer):
     cpu_mocny = fuzz.trapmf(cpu_range, [2.9, 3.4, 5, 5.65])
 
     # RAM
-    ram_range = np.arange(3, 10, 0.5)
+    ram_range = np.arange(3, 10, 0.1)
     ram_slaby = fuzz.trapmf(ram_range, [0.48, 2.7, 4, 5])
     ram_sredni = fuzz.trimf(ram_range, [4.4, 5.4, 7])
     ram_mocny = fuzz.trapmf(ram_range, [6, 7.5, 10.3, 12.5])
@@ -88,7 +88,9 @@ def calculate(max_price, computer):
     cpu = cpu_level[0]
     ram = ram_level[0]
     drive = drive_level[0]
-    price = 'akceptowalna' if price_level != 0 else 'nieakceptowalna'
+    price = 'akceptowalna' if price_level[1] != 0 else 'nieakceptowalna'
+
+    #print("CPU: {}\nRAM: {}\nDRIV: {}\nPRICE: {}, {}\n-------------------------------".format(cpu_level, ram_level, drive_level, price, price_level[1]))
 
     # RULES
     active_rules = []
@@ -97,51 +99,47 @@ def calculate(max_price, computer):
         active_rules.append(0)
     if cpu == 'mocny' and ram != 'slaby' and drive != 'slaby' and price == 'akceptowalna':
         # output_cut_levels[1] = ('mocny', (min([cpu_mocny_level, ram_sredni_level, ram_mocny_level, driv_sredni_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[1] = ('mocny', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[1] = ('mocny', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                             [cpu_mocny_level,
-                                                                                             ram_sredni_level,
-                                                                                             ram_mocny_level,
-                                                                                             driv_sredni_level,
-                                                                                             driv_mocny_level]])))
+                                                                                             locals()['ram_'+ram+"_level"],
+                                                                                             locals()['driv_'+drive+'_level']]])))
         active_rules.append(1)
     if cpu == 'sredni' and ram == 'mocny' and drive == 'mocny' and price == 'akceptowalna':
         # output_cut_levels[2] = ('mocny', (min([cpu_sredni_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[2] = ('mocny', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[2] = ('mocny', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                             [cpu_sredni_level,
                                                                                              ram_mocny_level,
                                                                                              driv_mocny_level]])))
         active_rules.append(2)
     if cpu == 'sredni' and ram == 'slaby' and drive == 'slaby' and price == 'akceptowalna':
         # output_cut_levels[3] = ('slaby', (min([cpu_sredni_level, ram_slaby_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[3] = ('slaby', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[3] = ('slaby', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                             [cpu_sredni_level,
                                                                                              ram_slaby_level,
                                                                                              driv_slaby_level]])))
         active_rules.append(3)
     if cpu == 'sredni' and ram == 'sredni' and price == 'akceptowalna':
         # output_cut_levels[4] = ('sredni', (min([cpu_sredni_level, ram_sredni_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[4] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[4] = ('sredni', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                              [cpu_sredni_level,
                                                                                               ram_sredni_level]])))
         active_rules.append(4)
     if cpu == 'sredni' and drive == 'sredni' and price == 'akceptowalna':
         # output_cut_levels[5] = ('sredni', (min([cpu_sredni_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[5] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[5] = ('sredni', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                              [cpu_sredni_level,
                                                                                               driv_sredni_level]])))
         active_rules.append(5)
     if cpu == 'slaby' and ram != 'mocny' and drive != 'mocny' and price == 'akceptowalna':
         # output_cut_levels[6] = ('slaby', (min([cpu_slaby_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[6] = ('slaby', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[6] = ('slaby', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                             [cpu_slaby_level,
-                                                                                             ram_slaby_level,
-                                                                                             ram_sredni_level,
-                                                                                             driv_slaby_level,
-                                                                                             driv_sredni_level]])))
+                                                                                             locals()['ram_'+ram+'_level'],
+                                                                                             locals()['driv_'+drive+'_level']]])))
         active_rules.append(6)
     if cpu == 'slaby' and ram == 'mocny' and drive == 'mocny' and price == 'akceptowalna':
         # output_cut_levels[7] = ('sredni', (min([cpu_slaby_level, ram_mocny_level, driv_mocny_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[7] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[7] = ('sredni', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                              [cpu_slaby_level,
                                                                                               ram_mocny_level,
                                                                                               driv_mocny_level]])))
@@ -152,33 +150,30 @@ def calculate(max_price, computer):
         active_rules.append(8)
     if cpu == 'mocny' and ram == 'slaby' and price == 'akceptowalna':
         # output_cut_levels[9] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[9] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[9] = ('sredni', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                              [cpu_mocny_level,
                                                                                               ram_slaby_level]])))
         active_rules.append(9)
     if cpu == 'mocny' and ram != 'mocny' and drive == 'slaby' and price == 'akceptowalna':
         # output_cut_levels[10] = ('sredni', (min([cpu_mocny_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[10] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[10] = ('sredni', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                               [cpu_mocny_level,
-                                                                                               ram_slaby_level,
-                                                                                               ram_sredni_level,
+                                                                                               locals()['ram_'+ram+'_level'],
                                                                                                driv_slaby_level]])))
         active_rules.append(10)
     if cpu == 'mocny' and ram == 'mocny' and drive == 'slaby' and price == 'akceptowalna':
         # output_cut_levels[11] = ('mocny', (min([cpu_mocny_level, ram_mocny_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[11] = ('mocny', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[11] = ('mocny', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                              [cpu_mocny_level,
                                                                                               ram_mocny_level,
                                                                                               driv_slaby_level]])))
         active_rules.append(11)
     if cpu == 'sredni' and ram == 'mocny' and drive != 'mocny' and price == 'akceptowalna':
         # output_cut_levels[12] = ('sredni', (min([cpu_sredni_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
-        output_cut_levels[12] = ('sredni', min(price_level[1], inference_norm(hamacher_norm, [x[1] for x in
+        output_cut_levels[12] = ('sredni', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                               [cpu_sredni_level,
-                                                                                               ram_slaby_level,
-                                                                                               ram_sredni_level,
-                                                                                               driv_slaby_level,
-                                                                                               driv_sredni_level]])))
+                                                                                               ram_mocny_level,
+                                                                                               locals()['driv_'+drive+'_level']]])))
         active_rules.append(12)
 
     # CUT_OUTPUTS
@@ -191,7 +186,6 @@ def calculate(max_price, computer):
     # AGGREGATE_OUTPUTS
     out_aggregated = []
     if len(output_cuts) <= 0:
-        print("CPU: {}\nRAM: {}\nDRIV: {}\nPRICE: {}".format(cpu_level, ram_level, drive_level, price_level))
         raise Exception
     elif len(output_cuts) == 1:
         out_aggregated = output_cuts[0]
@@ -221,3 +215,5 @@ def calculate(max_price, computer):
     # 4 -3 1 1 2
     # 4 3 1 1 3
     # 3 -3 -3 1 2
+
+
