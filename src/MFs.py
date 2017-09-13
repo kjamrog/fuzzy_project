@@ -196,7 +196,7 @@ def calculate(max_price, computer, norm=hamacher_norm):
 
     # DEFUZZIFY
     result_defuzz = fuzz.defuzzify.centroid(out_range, out_aggregated)
-    result_defuzz2 = sum(x * y for (x, y) in zip(out_range, out_aggregated)) / sum(out_aggregated)  # Wynik nieco różny od defuzzify.centroid
+    # result_defuzz2 = sum(x * y for (x, y) in zip(out_range, out_aggregated)) / sum(out_aggregated)  # Wynik nieco różny od defuzzify.centroid
 
     return result_defuzz
 
