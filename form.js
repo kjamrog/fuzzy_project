@@ -9,7 +9,8 @@ $(document).ready(function(){
             url: '/cgi-bin/fuzzy_project/cgi_script.py',
             data: $('.priceInput').serialize(),
             success: function(data){
-                console.log(data);
+                console.log('****', data);
+                $('#response').html(data);
             },
             error: function(jqXHR, textStatus, err){
                 console.log('jqXHR:', jqXHR);

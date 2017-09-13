@@ -221,5 +221,3 @@ def calculate(max_price, computer):
     # 4 -3 1 1 2
     # 4 3 1 1 3
     # 3 -3 -3 1 2
-
-
