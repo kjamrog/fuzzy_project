@@ -26,30 +26,33 @@ def calculate(max_price, computer, norm=hamacher_norm):
     cpu_range = np.arange(1.5, 4.2, 0.1)
     cpu_bslaby = fuzz.trapmf(cpu_range, [1, 1.5, 2.4, 2.6])
     cpu_slaby = fuzz.trimf(cpu_range, [2.4, 2.6, 2.8])
-    cpu_sredni = fuzz.trimf(cpu_range, [2.65, 2.85, 3.1])
+    cpu_sredni = fuzz.trimf(cpu_range, [2.7, 2.9, 3.15])
     cpu_mocny = fuzz.trapmf(cpu_range, [2.9, 3.4, 5, 5.65])
 
     # RAM
     ram_range = np.arange(3, 10, 0.1)
     ram_slaby = fuzz.trapmf(ram_range, [0.48, 2.7, 4, 5])
-    ram_sredni = fuzz.trimf(ram_range, [4.4, 5.4, 7])
+    ram_sredni = fuzz.trimf(ram_range, [4.4, 5.5, 7])
     ram_mocny = fuzz.trapmf(ram_range, [6, 7.5, 10.3, 12.5])
 
     # DRIVE
     driv_range = np.arange(256, 6150, 128)
     driv_slaby = fuzz.trapmf(driv_range, [-1866, 0, 768, 1300])
-    driv_sredni = fuzz.trimf(driv_range, [1000, 1536, 2400])
+    driv_sredni = fuzz.trimf(driv_range, [1000, 1700, 2400])
     driv_mocny = fuzz.trapmf(driv_range, [2000, 3000, 6386, 8272])
 
     # PRICE
     price_range = np.arange(0, 3000, 1)
-    price_acceptable = fuzz.trapmf(price_range, [-700, -80, max_price, 1.05 * max_price])
+    price_acceptable = fuzz.trapmf(price_range, [-700, -80, max_price, 1.1 * max_price])
 
     # OUTPUT
     out_range = np.arange(0, 1, 0.05)
     out_slaby = fuzz.trapmf(out_range, [-1, -0.5, 0.25, 0.5])
     out_sredni = fuzz.trimf(out_range, [0.25, 0.5, 0.75])
     out_mocny = fuzz.trapmf(out_range, [0.5, 0.75, 1.25, 1.5])
+    #out_slaby = fuzz.gaussmf(out_range, 0.11, 6.9*10**(-18))
+    #out_sredni = fuzz.trimf(out_range, [0.1, 0.5, 0.8])
+    #out_mocny = fuzz.gauss2mf(out_range, 0.15, 0.9, 0.15, 1.0)
 
     # FUZZIFICATION
     # get specific laptop data
@@ -91,7 +94,7 @@ def calculate(max_price, computer, norm=hamacher_norm):
     price = 'akceptowalna' if price_level[1] != 0 else 'nieakceptowalna'
 
     #print("CPU: {}\nRAM: {}\nDRIV: {}\nPRICE: {}, {}\n-------------------------------".format(cpu_level, ram_level, drive_level, price, price_level[1]))
-
+    #print(price_level)
     # RULES
     active_rules = []
     if price != 'akceptowalna':
@@ -111,12 +114,12 @@ def calculate(max_price, computer, norm=hamacher_norm):
                                                                                              ram_mocny_level,
                                                                                              driv_mocny_level]])))
         active_rules.append(2)
-    if cpu == 'sredni' and ram == 'slaby' and drive == 'slaby' and price == 'akceptowalna':
+    if cpu == 'sredni' and ram == 'slaby' and drive != 'mocny' and price == 'akceptowalna':
         # output_cut_levels[3] = ('slaby', (min([cpu_sredni_level, ram_slaby_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
         output_cut_levels[3] = ('slaby', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                             [cpu_sredni_level,
                                                                                              ram_slaby_level,
-                                                                                             driv_slaby_level]])))
+                                                                                             locals()['driv_' + drive + '_level']]])))
         active_rules.append(3)
     if cpu == 'sredni' and ram == 'sredni' and price == 'akceptowalna':
         # output_cut_levels[4] = ('sredni', (min([cpu_sredni_level, ram_sredni_level, price_level], key=lambda x: x[1]))[1])
@@ -124,10 +127,11 @@ def calculate(max_price, computer, norm=hamacher_norm):
                                                                                              [cpu_sredni_level,
                                                                                               ram_sredni_level]])))
         active_rules.append(4)
-    if cpu == 'sredni' and drive == 'sredni' and price == 'akceptowalna':
+    if cpu == 'sredni' and ram != 'slaby' and drive == 'sredni' and price == 'akceptowalna':
         # output_cut_levels[5] = ('sredni', (min([cpu_sredni_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])
         output_cut_levels[5] = ('sredni', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                              [cpu_sredni_level,
+                                                                                              locals()['ram_' + ram + '_level'],
                                                                                               driv_sredni_level]])))
         active_rules.append(5)
     if cpu == 'slaby' and ram != 'mocny' and drive != 'mocny' and price == 'akceptowalna':
@@ -161,12 +165,11 @@ def calculate(max_price, computer, norm=hamacher_norm):
                                                                                                locals()['ram_'+ram+'_level'],
                                                                                                driv_slaby_level]])))
         active_rules.append(10)
-    if cpu == 'mocny' and ram == 'mocny' and drive == 'slaby' and price == 'akceptowalna':
+    if cpu == 'mocny' and ram == 'mocny' and price == 'akceptowalna':
         # output_cut_levels[11] = ('mocny', (min([cpu_mocny_level, ram_mocny_level, driv_slaby_level, price_level], key=lambda x: x[1]))[1])
         output_cut_levels[11] = ('mocny', min(price_level[1], inference_norm(norm, [x[1] for x in
                                                                                              [cpu_mocny_level,
-                                                                                              ram_mocny_level,
-                                                                                              driv_slaby_level]])))
+                                                                                              ram_mocny_level]])))
         active_rules.append(11)
     if cpu == 'sredni' and ram == 'mocny' and drive != 'mocny' and price == 'akceptowalna':
         # output_cut_levels[12] = ('sredni', (min([cpu_sredni_level, ram_slaby_level, ram_sredni_level, driv_slaby_level, driv_sredni_level, price_level], key=lambda x: x[1]))[1])

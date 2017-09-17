@@ -19,7 +19,7 @@ class Computer:
         self.calculated_rate = 0
 
     def calc_rate(self, max_price):
-        self.calculated_rate = mfs.calculate(max_price, self, min)
+        self.calculated_rate = mfs.calculate(max_price, self)
 
 
 class ComputersList:
